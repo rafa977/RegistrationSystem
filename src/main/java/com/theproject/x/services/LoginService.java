@@ -18,7 +18,6 @@ import org.springframework.util.MultiValueMap;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.theproject.x.models.keycloak.KeycloakAccessToken;
 import com.theproject.x.response.RestBaseResponse;
 
@@ -29,12 +28,36 @@ public class LoginService {
 	@Autowired
 	private Environment env;
 
+	public String keycloakAdminAccessToken() {		
+	    RestTemplate restTemplate = new RestTemplate();
+	    
+		URI uriKeycloak = URI.create(env.getProperty("base.url.keycloak.access.token"));
+		
+		HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.add("Content-Type", "application/x-www-form-urlencoded");
+        
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+		map.add("username", env.getProperty("admin.user.keycloak.username"));
+		map.add("password", env.getProperty("admin.user.keycloak.password"));
+		map.add("client_id", env.getProperty("admin.user.keycloak.client_id"));
+		map.add("grant_type", "password");
+		map.add("credentials", "true");
+		map.add("scope", "openid");
+        
+        HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(map, headers);
+        
+        ResponseEntity<KeycloakAccessToken> tokenResponse = restTemplate.exchange(uriKeycloak, HttpMethod.POST, entity,
+        		KeycloakAccessToken.class);
+                
+	      return tokenResponse.getBody().getAccessToken();
+	}
+	
+	
 	public RestBaseResponse<String> keycloakUserAccessToken(String username, String password) throws JsonMappingException, JsonProcessingException {		
 	    RestTemplate restTemplate = new RestTemplate();	    
-		URI uriKeycloak = URI.create(env.getProperty("base.url.keycloak.access.token"));
-		RestBaseResponse<String> response = new RestBaseResponse<String>();
-		ObjectMapper objectMapper = new ObjectMapper();	
-		
+	    URI uriKeycloak = URI.create(env.getProperty("base.url.keycloak.access.token"));
+		RestBaseResponse<String> response = new RestBaseResponse<String>();		
 		HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.add("Content-Type", "application/x-www-form-urlencoded");
@@ -42,7 +65,7 @@ public class LoginService {
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
 		map.add("username", username);
 		map.add("password", password);
-		map.add("client_id", env.getProperty("admin.user.keycloak.client_id"));
+		map.add("client_id", env.getProperty("user.client"));
 		map.add("grant_type", "password");
 		map.add("client_secret", env.getProperty("admin.user.keycloak.client.secret"));
 		ResponseEntity<KeycloakAccessToken> tokenResponse = null;
@@ -62,5 +85,37 @@ public class LoginService {
 			    return response;
 	    	}
 	}
+	
+	public RestBaseResponse<String> keycloakUserLogout(String userId) throws JsonMappingException, JsonProcessingException {		
+	    RestTemplate restTemplate = new RestTemplate();	    
+	    String adminAccessToken = keycloakAdminAccessToken();
+	    
+		URI uriKeycloak = URI.create(env.getProperty("base.url.keycloak.update.user") + "/" + userId + "/logout");
+		RestBaseResponse<String> response = new RestBaseResponse<String>();		
+		HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+	    headers.set("Authorization", "Bearer " + adminAccessToken);	      
+        headers.add("Content-Type", "application/x-www-form-urlencoded");
+        
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+		map.add("id", userId);
+		map.add("realm", env.getProperty("keycloak.realm"));
+		
+		try {
+			  HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(map, headers);
+			  restTemplate.exchange(uriKeycloak, HttpMethod.POST, entity, KeycloakAccessToken.class);
+		      response.setSuccess(true);
+		      return response;
+
+	      }
+	    	catch (final HttpClientErrorException e) {
+	    		response.setSuccess(false);
+	    		response.setMessage("Something went wrong. Please try again.");
+    
+			    return response;
+	    	}
+	}
+	
+	
 	
 }
