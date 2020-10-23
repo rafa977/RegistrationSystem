@@ -28,31 +28,8 @@ public class LoginService {
 	@Autowired
 	private Environment env;
 
-	public String keycloakAdminAccessToken() {		
-	    RestTemplate restTemplate = new RestTemplate();
-	    
-		URI uriKeycloak = URI.create(env.getProperty("base.url.keycloak.access.token"));
-		
-		HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.add("Content-Type", "application/x-www-form-urlencoded");
-        
-        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-		map.add("username", env.getProperty("admin.user.keycloak.username"));
-		map.add("password", env.getProperty("admin.user.keycloak.password"));
-		map.add("client_id", env.getProperty("admin.user.keycloak.client_id"));
-		map.add("grant_type", "password");
-		map.add("credentials", "true");
-		map.add("scope", "openid");
-        
-        HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(map, headers);
-        
-        ResponseEntity<KeycloakAccessToken> tokenResponse = restTemplate.exchange(uriKeycloak, HttpMethod.POST, entity,
-        		KeycloakAccessToken.class);
-                
-	      return tokenResponse.getBody().getAccessToken();
-	}
-	
+	@Autowired
+	private KeycloakService keycloakService;
 	
 	public RestBaseResponse<String> keycloakUserAccessToken(String username, String password) throws JsonMappingException, JsonProcessingException {		
 	    RestTemplate restTemplate = new RestTemplate();	    
@@ -88,7 +65,7 @@ public class LoginService {
 	
 	public RestBaseResponse<String> keycloakUserLogout(String userId) throws JsonMappingException, JsonProcessingException {		
 	    RestTemplate restTemplate = new RestTemplate();	    
-	    String adminAccessToken = keycloakAdminAccessToken();
+	    String adminAccessToken = keycloakService.keycloakAdminAccessToken();
 	    
 		URI uriKeycloak = URI.create(env.getProperty("base.url.keycloak.update.user") + "/" + userId + "/logout");
 		RestBaseResponse<String> response = new RestBaseResponse<String>();		
