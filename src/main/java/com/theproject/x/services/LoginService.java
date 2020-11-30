@@ -19,6 +19,7 @@ import org.springframework.util.MultiValueMap;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.theproject.x.models.keycloak.KeycloakAccessToken;
+import com.theproject.x.response.RestAccessTokenResponse;
 import com.theproject.x.response.RestBaseResponse;
 
 @Service("loginService")
@@ -31,11 +32,13 @@ public class LoginService {
 	@Autowired
 	private KeycloakService keycloakService;
 	
-	public RestBaseResponse<String> keycloakUserAccessToken(String username, String password) throws JsonMappingException, JsonProcessingException {		
+	public RestAccessTokenResponse keycloakUserAccessToken(String username, String password) throws Exception {		
 	    RestTemplate restTemplate = new RestTemplate();	    
-	    URI uriKeycloak = URI.create(env.getProperty("base.url.keycloak.access.token"));
-		RestBaseResponse<String> response = new RestBaseResponse<String>();		
-		HttpHeaders headers = new HttpHeaders();
+	    URI uriKeycloak = URI.create(env.getProperty("base.url") + env.getProperty("base.url.keycloak.access.token"));
+	    RestAccessTokenResponse response = new RestAccessTokenResponse();		
+	    KeycloakAccessToken accessToken = new KeycloakAccessToken();
+	    
+	    HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.add("Content-Type", "application/x-www-form-urlencoded");
         
@@ -50,24 +53,23 @@ public class LoginService {
 		try {
 			  HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(map, headers);
 			  tokenResponse = restTemplate.exchange(uriKeycloak, HttpMethod.POST, entity, KeycloakAccessToken.class);
-		      response.setData(tokenResponse.getBody().getAccessToken());
+		      response.setAccessToken(tokenResponse.getBody());
 		      response.setSuccess(true);
-		      return response;
 
+			  return response;
 	      }
 	    	catch (final HttpClientErrorException e) {
 	    		response.setSuccess(false);
 	    		response.setMessage("Unauthorized. Wrong Username or Password");
-    
-			    return response;
+	    		return response;
 	    	}
 	}
 	
 	public RestBaseResponse<String> keycloakUserLogout(String userId) throws JsonMappingException, JsonProcessingException {		
 	    RestTemplate restTemplate = new RestTemplate();	    
-	    String adminAccessToken = keycloakService.keycloakAdminAccessToken();
+	    String adminAccessToken = KeycloakService.adminAccessToken;
 	    
-		URI uriKeycloak = URI.create(env.getProperty("base.url.keycloak.update.user") + "/" + userId + "/logout");
+		URI uriKeycloak = URI.create(env.getProperty("base.url") + env.getProperty("base.url.keycloak.update.user") + "/" + userId + "/logout");
 		RestBaseResponse<String> response = new RestBaseResponse<String>();		
 		HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);

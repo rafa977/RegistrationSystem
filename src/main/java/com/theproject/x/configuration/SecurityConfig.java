@@ -51,6 +51,7 @@ class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	public void configure(WebSecurity web) throws Exception {
 		web.ignoring().antMatchers(HttpMethod.OPTIONS, "/**");
 		web.ignoring().antMatchers(HttpMethod.POST, "/LoginController/login");
+		web.ignoring().antMatchers(HttpMethod.POST, "/RegistrationController/register");
 	}
 	
 	

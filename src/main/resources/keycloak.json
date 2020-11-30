@@ -1,0 +1,13 @@
+{
+  "realm": "Testrealm",
+  "auth-server-url": "http://10.50.40.11:8180/auth/",
+  "ssl-required": "external",
+  "resource": "testing-services",
+  "verify-token-audience": true,
+  "credentials": {
+    "secret": "e2f1ae3f-0275-4646-9723-1f730478092d"
+  },
+  "use-resource-role-mappings": true,
+  "confidential-port": 0,
+  "policy-enforcer": {}
+}

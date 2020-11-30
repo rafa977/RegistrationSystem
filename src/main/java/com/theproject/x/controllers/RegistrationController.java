@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.theproject.x.models.User.RegistrationUser;
+import com.theproject.x.models.User.UserModel;
 import com.theproject.x.response.RestBaseResponse;
 import com.theproject.x.services.RegistrationService;
 
@@ -24,13 +24,14 @@ public class RegistrationController {
 
 	@RequestMapping(value = "/register", method = RequestMethod.POST)
 	@ResponseBody
-	public RestBaseResponse<String> register(@RequestBody RegistrationUser user,
-			final HttpServletRequest request) throws JsonMappingException, JsonProcessingException {
+	public RestBaseResponse<String> register(@RequestBody UserModel user,
+			final HttpServletRequest request) throws Throwable {
 		
 		RestBaseResponse<String> response = new RestBaseResponse<String>();
 		
-		registrationService.keycloakRegistration(user);
-		response.setSuccess(true);
+		response = registrationService.keycloakRegistration(user);
+		
+		//response.setSuccess(true);
 		
 		return response;
 	}

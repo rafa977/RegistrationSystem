@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.theproject'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
+sourceCompatibility = '1.8'
 
 repositories {
 	mavenCentral()
@@ -18,6 +18,9 @@ dependencies {
 
 	compile 'org.keycloak.bom:keycloak-adapter-bom:11.0.2'
 	compile 'org.keycloak:keycloak-spring-boot-starter:11.0.2'
+	compile group: 'org.keycloak', name: 'keycloak-admin-client', version: '11.0.2'
+	compile group: 'org.keycloak', name: 'keycloak-services', version: '11.0.2'
+	compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0'
 	
 	
 	testImplementation('org.springframework.boot:spring-boot-starter-test') {
@@ -25,6 +28,14 @@ dependencies {
 	}
 	testImplementation 'org.springframework.security:spring-security-test'
 }
+
+configurations.all {
+    exclude module: 'slf4j-log4j12'
+    exclude module: 'jms'
+    exclude module: 'jmxtools'
+    exclude module: 'jmxri'
+}
+
 
 test {
 	useJUnitPlatform()

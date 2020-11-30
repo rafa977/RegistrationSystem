@@ -3,6 +3,8 @@ package com.theproject.x.services;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,13 +13,15 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import com.theproject.x.models.User.RegistrationUser;
-import com.theproject.x.services.api.GatewayApiException;
+import com.theproject.x.models.User.UserModel;
+import com.theproject.x.response.RestBaseResponse;
 
 @Service("registrationService")
 @PropertySource({ "classpath:application.properties" })
@@ -29,23 +33,44 @@ public class RegistrationService {
 	@Autowired
 	private KeycloakService keycloakSerivce;
 	
-	public ResponseEntity<String> keycloakRegistration(RegistrationUser registrationUser) {
-		ResponseEntity<String> response = null;
+	@Autowired
+	private UserProfileApiService userProfileService;
+	
+	Log logger = LogFactory.getLog(RegistrationService.class);
+
+	public void deleteKeycloakUser(String userId) {
+		keycloakSerivce.deleteKeycloakUser(userId);
+	}
+	
+	public RestBaseResponse<String> keycloakRegistration(UserModel registrationUser) throws Throwable {
+		RestBaseResponse<String> response = new RestBaseResponse<String>();
+		RestBaseResponse<String> userResponse = new RestBaseResponse<String>();
+
 		try {
 			response = keycloakUserRegistration(registrationUser);
-			if (response.getStatusCode().value() != 201) {
-				throw new GatewayApiException("Something went wrong. Please try again.");
+			if(response.isSuccess()) {
+				UserRepresentation user = keycloakSerivce.returnUserFromUsername(registrationUser.getEmail());
+				
+				userResponse = userProfileService.saveToDB(user);
+				if(!(userResponse.isSuccess())) {
+					this.deleteKeycloakUser(user.getId());
+					return userResponse;
+				}
 			}
+			
+			return response;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return response;
 	}
-
 	
-	public ResponseEntity<String> keycloakUserRegistration(RegistrationUser user) {
+	
+	public RestBaseResponse<String> keycloakUserRegistration(UserModel user) {
 		//get admin access token
 		String accessToken = keycloakSerivce.keycloakAdminAccessToken();
+		
+		RestBaseResponse<String> response = new RestBaseResponse<String>();
 		
 		UserRepresentation newUser = new UserRepresentation();
 		CredentialRepresentation credentials = new CredentialRepresentation();
@@ -62,15 +87,6 @@ public class RegistrationService {
 		newUser.setCredentials(new ArrayList<>());
 		newUser.getCredentials().add(credentials);		
 		
-//		
-//		SecRegVerifData userTempData = new SecRegVerifData();
-//		userTempData.setSUsername(user.getUsername());
-//		userTempData.setSFirstName(user.getFirstName());
-//		userTempData.setSLastName(user.getLastName());
-//		userTempData.setSCountry(user.getCountry());
-//		userTempData.setSMobile(user.getMobile());
-//		
-//		secRegVerifDataRepository.save(userTempData);
 		
 	    RestTemplate restTemplate = new RestTemplate();
 	    HttpHeaders headers = new HttpHeaders();
@@ -78,11 +94,30 @@ public class RegistrationService {
 	      headers.set("Authorization", "Bearer " + accessToken);	      
 	      headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
 	   
-	      
+	   try {
+		   
 	      HttpEntity<UserRepresentation> entity2 = new HttpEntity<UserRepresentation>(newUser,headers);	  
-	      ResponseEntity<String> response = restTemplate.exchange(env.getProperty("base.url.keycloak.register.user"), HttpMethod.POST, entity2, String.class);
-	      
-	      return response;
+	      ResponseEntity<String> responseEntity = restTemplate.exchange(env.getProperty("base.url") + env.getProperty("base.url.keycloak.register.user"), HttpMethod.POST, entity2, String.class);
+
+  		  HttpStatus statusCode = responseEntity.getStatusCode();
+	  		if(statusCode.value() != 204 && statusCode.value() != 201) {
+				response.setSuccess(false);
+				response.setData(responseEntity.getBody());
+			}
+	  		
+	  		return response;
+	  		
+	   } catch(HttpClientErrorException e) {
+	    	logger.debug(e.getMessage());
+	    	response.setSuccess(false);
+	    	response.setMessage(e.getStatusText());
+
+	    	if(e.getRawStatusCode() == 409) {
+   			response.setSuccess(false);
+   			response.setMessage("This email is already in use.");
+   		}
+	    	return response;
+	    }
 	}
 
 	

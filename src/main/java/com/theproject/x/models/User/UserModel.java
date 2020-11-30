@@ -1,6 +1,6 @@
 package com.theproject.x.models.User;
 
-public class RegistrationUser{
+public class UserModel{
 
     private String username;
     private String password;
@@ -11,7 +11,8 @@ public class RegistrationUser{
     private String mobile;
     private String country;
     private String token;
-
+    private String keycloakUserId;
+    
     public String getUsername() {
         return username;
     }
@@ -83,6 +84,15 @@ public class RegistrationUser{
 
 	public void setToken(String token) {
 		this.token = token;
+	}
+
+	
+	public String getKeycloakUserId() {
+		return keycloakUserId;
+	}
+
+	public void setKeycloakUserId(String keycloakUserId) {
+		this.keycloakUserId = keycloakUserId;
 	}
 
 	@Override
