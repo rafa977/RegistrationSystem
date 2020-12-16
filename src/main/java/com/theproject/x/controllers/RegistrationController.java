@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,5 +37,16 @@ public class RegistrationController {
 		return response;
 	}
 
-	
+	@RequestMapping(value = "/usernameValid", method = RequestMethod.GET)
+	@ResponseBody
+	public RestBaseResponse<String> usernameValid(final HttpServletRequest request, @RequestParam("parameter") String parameter) throws Throwable{
+		
+		RestBaseResponse<String> response = new RestBaseResponse<>();
+		boolean valid = true;
+		
+		valid = registrationService.usernameValidation(parameter);
+		response.setSuccess(valid);
+		
+		return response;
+	}
 }

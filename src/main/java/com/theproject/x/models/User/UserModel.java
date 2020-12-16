@@ -11,7 +11,7 @@ public class UserModel{
     private String mobile;
     private String country;
     private String token;
-    private String keycloakUserId;
+    private String kcUserId;
     
     public String getUsername() {
         return username;
@@ -87,12 +87,12 @@ public class UserModel{
 	}
 
 	
-	public String getKeycloakUserId() {
-		return keycloakUserId;
+	public String getKcUserId() {
+		return kcUserId;
 	}
 
-	public void setKeycloakUserId(String keycloakUserId) {
-		this.keycloakUserId = keycloakUserId;
+	public void setKcUserId(String kcUserId) {
+		this.kcUserId = kcUserId;
 	}
 
 	@Override

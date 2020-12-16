@@ -3,6 +3,7 @@ package com.theproject.x.services;
 import java.io.IOException;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -27,7 +28,7 @@ public class HttpService {
 		HttpPost post = new HttpPost(endpoint);
 		post.setHeader("Accept", "application/json");
 		post.setHeader("Content-type", "application/json");
-		post.setHeader(HttpHeaders.AUTHORIZATION, "Bearer asdasddd" + adminAccessToken);
+		post.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + adminAccessToken);
 
 		StringEntity stringEntity = new StringEntity(json);
 		post.setEntity(stringEntity);
@@ -53,8 +54,38 @@ public class HttpService {
 
 		return apiResp;	
 	}
-	
-	public void HttpGetRequest() {
 		
+	public GwResponse<String> HttGetRequest(String endpoint) throws Throwable {
+		String adminAccessToken = KeycloakService.adminAccessToken;
+		
+		GwResponse<String> apiResp = new GwResponse<String>();
+		ObjectMapper mapper = new ObjectMapper();
+
+		HttpGet getRequest = new HttpGet(endpoint);
+		getRequest.setHeader("Accept", "application/json");
+		getRequest.setHeader("Content-type", "application/json");
+		getRequest.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + adminAccessToken);
+
+		CloseableHttpClient httpClient = HttpClients.createDefault();
+		try (CloseableHttpResponse apiResponse = httpClient.execute(getRequest)) {
+
+			if (apiResponse.getEntity() != null) {
+
+				// A Simple JSON Response Read
+				String retSrc = EntityUtils.toString(apiResponse.getEntity());
+					apiResp = mapper.readValue(retSrc, new TypeReference<GwResponse<String>>() {
+				});
+
+//				logger.log(Level.INFO, "HTML: " + apiResp.getMessage());
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			apiResp.setSuccess(false);
+		}
+		httpClient.close();
+
+		return apiResp;	
 	}
+	
 }

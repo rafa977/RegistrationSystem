@@ -38,7 +38,7 @@ public class UserProfileApiService {
 		UserModel regUser = (UserModel) objectConverter.convertObject(user,
 				new TypeReference<UserModel>() {
 				});
-		regUser.setKeycloakUserId(user.getId());
+		regUser.setKcUserId(user.getId());
 		
 		try {
 			String jsonStr = objectMapper.writeValueAsString(regUser);
@@ -54,6 +54,24 @@ public class UserProfileApiService {
 		}
 		
 		return response;
+	}
+	
+	public Boolean checkIfUserExists(String parameter) throws Throwable {
+		RestBaseResponse<String> response = new RestBaseResponse<String>();
+		GwResponse<String> apiResponse = new GwResponse<String>();
+		
+		String url = env.getProperty("up.base.url") + env.getProperty("up.usernameValid.endpoint") + "?username=" + parameter;
+		
+		try {			
+			apiResponse = httpService.HttGetRequest(url);
+			if(apiResponse.getSuccess() == false) {
+				return false;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+				
+		return true;
 	}
 	
 }

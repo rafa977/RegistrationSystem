@@ -1,6 +1,8 @@
 package com.theproject.x.services;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
@@ -24,6 +26,12 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.theproject.x.models.Password;
+import com.theproject.x.models.UpdatePasswordException;
 import com.theproject.x.models.keycloak.KeycloakAccessToken;
 import com.theproject.x.response.RestBaseResponse;
 
@@ -128,6 +136,43 @@ public class KeycloakService {
     		response.setSuccess(false);
     		return response;
     	}
+	}
+	
+	public RestBaseResponse<String> keycloakUserPassReset(String id, Password password) throws JsonMappingException, JsonProcessingException{
+		ObjectMapper objectMapper = new ObjectMapper();	
+		String accessToken = keycloakAdminAccessToken();
+		HashMap<String, String> userUpdateValues = new HashMap<String, String>();
+		
+		userUpdateValues.put("type","password");
+		userUpdateValues.put("temporary","false");
+		userUpdateValues.put("value", password.getMatchNewPassword());
+		
+		Gson valuesJson = new Gson();
+		String json = valuesJson.toJson(userUpdateValues);
+	
+	    RestTemplate restTemplate = new RestTemplate();
+	    HttpHeaders headers = new HttpHeaders();
+	      headers.set("Content-Type", "application/json");
+	      headers.set("Authorization", "Bearer " + accessToken);	      
+	      headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON)); 
+	      RestBaseResponse<String> response = new RestBaseResponse<String>();
+
+	      String url = env.getProperty("base.url") + env.getProperty("base.url.keycloak.update.user") + "/" + id + "/reset-password";
+	      try {
+				HttpEntity<String> entity2 = new HttpEntity<String>(json,headers);	  
+				restTemplate.exchange(url, HttpMethod.PUT, entity2, String.class);
+				response.setMessage("Password Changed Successfully.");
+				response.setSuccess(true);
+				return response;
+
+	      } catch (final HttpClientErrorException e) {
+	    		
+				UpdatePasswordException exc = objectMapper.readValue(e.getResponseBodyAsString(), UpdatePasswordException.class);
+				
+				response.setSuccess(false);
+				response.setMessage(exc.getError_description());
+				return response;
+	    	}
 	}
 	
 }

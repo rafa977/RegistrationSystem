@@ -51,13 +51,18 @@ class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
 	public void configure(WebSecurity web) throws Exception {
 		web.ignoring().antMatchers(HttpMethod.OPTIONS, "/**");
 		web.ignoring().antMatchers(HttpMethod.POST, "/LoginController/login");
+//		web.ignoring().antMatchers(HttpMethod.POST, "/LoginController/deviceInfo");
+
 		web.ignoring().antMatchers(HttpMethod.POST, "/RegistrationController/register");
+		web.ignoring().antMatchers(HttpMethod.POST, "/LoginController/forgotPassword");	
+		web.ignoring().antMatchers(HttpMethod.POST, "/LoginController/resetPassword");	
 	}
 	
 	
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         super.configure(http);
-        http.authorizeRequests();
+			http.csrf().disable().authorizeRequests()
+		.anyRequest().authenticated();
     }
 }

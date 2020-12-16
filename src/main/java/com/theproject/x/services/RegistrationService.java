@@ -34,7 +34,7 @@ public class RegistrationService {
 	private KeycloakService keycloakSerivce;
 	
 	@Autowired
-	private UserProfileApiService userProfileService;
+	private UserProfileApiService userProfileApiService;
 	
 	Log logger = LogFactory.getLog(RegistrationService.class);
 
@@ -51,7 +51,7 @@ public class RegistrationService {
 			if(response.isSuccess()) {
 				UserRepresentation user = keycloakSerivce.returnUserFromUsername(registrationUser.getEmail());
 				
-				userResponse = userProfileService.saveToDB(user);
+				userResponse = userProfileApiService.saveToDB(user);
 				if(!(userResponse.isSuccess())) {
 					this.deleteKeycloakUser(user.getId());
 					return userResponse;
@@ -120,6 +120,11 @@ public class RegistrationService {
 	    }
 	}
 
-	
+	public boolean usernameValidation(String parameter) throws Throwable {
+		Boolean userExists = false;
+		userExists = userProfileApiService.checkIfUserExists(parameter);
+		
+		return userExists;
+	}
 	
 }
